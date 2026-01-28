@@ -1,0 +1,231 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/YousefRezek/Microstructure-Evolution-DataSchema/blob/main/microstructure_module.json",
+  "version": "1.0",
+  "title": "A metadata schema for microstructure evolution data",
+  "description": "Time-ordered list of microstructure snapshots.",
+  "type": "array",
+  "$comment": "This schema introduces a dedicated microstructure-evolution module within the schema (microstructure_sensitive_mechanical_metadata_schema) that captures time-resolved microstructural states at both the voxel scale and grain scale, and links these states directly to mechanical property outcomes.",
+  "items": {
+    "type": "object",
+    "properties": {
+      "time": {
+        "description": "Time coordinate for this snapshot. Use physical time when available and specify the corresponding time_unit (e.g., s, ms). If time_unit is omitted, time is interpreted as a dimensionless step or load increment index.",
+        "type": "number"
+      },
+      "grid": {
+        "description": "Grid definition for this microstructure snapshot, including its deformation state, physical size, and voxel-aligned spacing.",
+        "type": "object",
+        "properties": {
+          "status": {
+            "description": "Grid configuration at this snapshot. 'undeformed' denotes an orthogonal grid in the reference configuration (also used for any regridded/remapped microstructure represented on a fresh orthogonal grid). 'deformed' denotes a distorted (potentially non-orthogonal) grid after deformation.",
+            "type": "string",
+            "enum": [
+              "undeformed",
+              "deformed"
+            ]
+          },
+          "grid_size": {
+            "description": "Physical size of the grid in x, y, z (same unit system as the dataset).",
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "grid_spacing": {
+            "description": "Voxel spacing in x, y, z (same unit system as the dataset).",
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          }
+        },
+        "required": [
+          "status",
+          "grid_size",
+          "grid_spacing"
+        ],
+        "additionalProperties": false
+      },
+      "grains": {
+        "description": "Grain-averaged state at current time.",
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "grain_id": {
+              "description": "Unique grain identifier, stable across time steps.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "phase_id": {
+              "description": "Phase identifier associated with the grain.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "grain_volume": {
+              "description": "Grain volume in the dataset volume unit.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "orientation": {
+              "type": "array",
+              "description": "Crystal orientation as three angles (e.g., Bunge Euler angles) in the dataset angle unit, ordered as [phi1, Phi, phi2].",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "type": "number"
+              }
+            },
+            "parent_grain_id": {
+              "description": "Parent grain identifier(s) in the previous snapshot. Use an integer for a single parent; use an array when a grain results from multiple parents (e.g., merge).",
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              ]
+            }
+          },
+          "required": [
+            "grain_id",
+            "phase_id",
+            "orientation"
+          ]
+        }
+      },
+      "voxels": {
+        "description": "Per-voxel state data for this snapshot.",
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "voxel_id": {
+              "description": "Unique voxel identifier within this snapshot.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "grain_id": {
+              "description": "Grain identifier assigned to this voxel.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "centroid_coordinates": {
+              "description": "Voxel centroid position in x, y, z (same unit length as the dataset).",
+              "minItems": 3,
+              "maxItems": 3,
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "voxel_index": {
+              "description": "Integer voxel indices [i, j, k] on the grid.",
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "voxel_volume": {
+              "description": "Voxel volume in the dataset volume unit.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "orientation": {
+              "description": "Crystal orientation as three angles (e.g., Bunge Euler angles) in the dataset angle unit, ordered as [phi1, Phi, phi2].",
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "type": "number"
+              }
+            },
+            "deformation_gradient": {
+              "description": "Deformation gradient F as a 3x3 matrix (row-major).",
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "type": "array",
+                "minItems": 3,
+                "maxItems": 3,
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "first_piola_kirchhoff_stress": {
+              "description": "First Piola–Kirchhoff stress P as a 3x3 matrix (row-major). Units follow the stress_unit of the dataset.",
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "type": "array",
+                "minItems": 3,
+                "maxItems": 3,
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "strain": {
+              "description": "Strain tensor as a 3x3 matrix (row-major).",
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "type": "array",
+                "minItems": 3,
+                "maxItems": 3,
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "IPFcolor_(1 0 0)": {
+              "description": "IPF color for the (1 0 0) direction as 8-bit RGB [R,G,B].",
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 255
+              }
+            }
+          },
+          "required": [
+            "voxel_id",
+            "grain_id",
+            "centroid_coordinates",
+            "voxel_index",
+            "orientation"
+          ]
+        }
+      }
+    },
+    "required": [
+      "time",
+      "grid",
+      "grains",
+      "voxels"
+    ]
+  }
+}
